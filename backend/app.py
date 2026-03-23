@@ -6,7 +6,7 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
-pipeline = joblib.load("../mobile_price_pipeline.pkl")
+pipeline = joblib.load("mobile_price_pipeline.pkl")
 
 @app.route("/predict", methods=["POST"])
 def predict():
