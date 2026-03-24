@@ -25,10 +25,8 @@ Predict smartphone prices from key device specifications using an end-to-end ML 
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
 - [API Reference](#api-reference)
-- [Troubleshooting](#troubleshooting)
-- [Roadmap](#roadmap)
 - [Contributing](#contributing)
-- [License](#license)
+
 
 ## Overview
 
@@ -55,11 +53,11 @@ Add screenshots in a folder like `assets/` and update paths below.
 
 ### App UI
 
-![App UI](assets/app-ui.png)
+![App UI](frontend/src/assets/App_UI.png)
 
 ### Prediction Result
 
-![Prediction Result](assets/prediction-result.png)
+![Prediction Result](frontend/src/assets/Result.png)
 
 ## Tech Stack
 
@@ -187,13 +185,6 @@ Response:
 - **CORS or fetch errors:** start backend first, then frontend.
 - **Unexpected predictions:** verify input values and data types used by frontend.
 
-## Roadmap
-
-- Add input validation and backend error handling
-- Convert form values explicitly to numeric types before API call
-- Add unit/integration tests for API and UI
-- Add model metrics section in README
-- Deploy full stack (Render/Railway for backend, Vercel/Netlify for frontend)
 
 ## Contributing
 
