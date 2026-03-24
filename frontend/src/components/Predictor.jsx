@@ -1,6 +1,16 @@
 import { useState } from "react";
 
 function Predictor() {
+  const numericFields = [
+    "Ratings",
+    "RAM",
+    "ROM",
+    "Mobile_Size",
+    "Primary_Cam",
+    "Selfi_Cam",
+    "Battery_Power"
+  ];
+
   const [form, setForm] = useState({
     Brand: "",
     Ratings: "",
@@ -13,6 +23,9 @@ function Predictor() {
   });
 
   const [price, setPrice] = useState(null);
+  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
 
   // Dropdown options with real-world values
   const dropdownOptions = {
@@ -27,20 +40,87 @@ function Predictor() {
   };
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+    setError("");
   };
 
-  const handleSubmit = async () => {
-    const response = await fetch("http://127.0.0.1:5000/predict", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(form)
+  const validateForm = () => {
+    const nextErrors = {};
+
+    if (!form.Brand.trim()) {
+      nextErrors.Brand = "Brand is required.";
+    }
+
+    numericFields.forEach((field) => {
+      const value = form[field];
+      if (value === "" || value === null || value === undefined) {
+        nextErrors[field] = `${getLabel(field)} is required.`;
+        return;
+      }
+
+      const parsed = Number(value);
+      if (Number.isNaN(parsed)) {
+        nextErrors[field] = `${getLabel(field)} must be a number.`;
+      }
     });
 
-    const data = await response.json();
-    setPrice(data.prediction);
+    if (!nextErrors.Ratings) {
+      const rating = Number(form.Ratings);
+      if (rating < 1 || rating > 5) {
+        nextErrors.Ratings = "Rating must be between 1 and 5.";
+      }
+    }
+
+    setFieldErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const buildPayload = () => ({
+    ...form,
+    Brand: form.Brand.trim(),
+    Ratings: Number(form.Ratings),
+    RAM: Number(form.RAM),
+    ROM: Number(form.ROM),
+    Mobile_Size: Number(form.Mobile_Size),
+    Primary_Cam: Number(form.Primary_Cam),
+    Selfi_Cam: Number(form.Selfi_Cam),
+    Battery_Power: Number(form.Battery_Power)
+  });
+
+  const handleSubmit = async () => {
+    setPrice(null);
+    setError("");
+
+    if (!validateForm()) {
+      setError("Please fix the highlighted fields and try again.");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const response = await fetch("http://127.0.0.1:5000/predict", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(buildPayload())
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Prediction failed. Please try again.");
+        return;
+      }
+
+      setPrice(data.prediction);
+    } catch {
+      setError("Unable to connect to backend. Please ensure the server is running.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getLabel = (key) => {
@@ -114,19 +194,30 @@ function Predictor() {
                   )}
                 </select>
               )}
+              {fieldErrors[key] && (
+                <p style={{ color: "#ef4444", marginTop: "6px", fontSize: "0.85rem" }}>
+                  {fieldErrors[key]}
+                </p>
+              )}
             </div>
           ))}
         </div>
 
         {/* Button */}
         <div className="predictor-button-wrap">
-          <button onClick={handleSubmit} className="predictor-button">
-            🔮 Predict Price
+          <button onClick={handleSubmit} className="predictor-button" disabled={isLoading}>
+            {isLoading ? "Predicting..." : "🔮 Predict Price"}
           </button>
         </div>
 
+        {error && (
+          <p style={{ color: "#ef4444", textAlign: "center", marginTop: "8px" }}>
+            {error}
+          </p>
+        )}
+
         {/* Result Display */}
-        {price && (
+        {price !== null && (
           <div className="predictor-result">
             <p className="predictor-result-title">Estimated Price</p>
             <h2 className="predictor-result-value">💰 ₹ {price}</h2>
