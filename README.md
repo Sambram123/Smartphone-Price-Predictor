@@ -25,6 +25,7 @@ Predict smartphone prices from key device specifications using an end-to-end ML 
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
 - [API Reference](#api-reference)
+- [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 
 
@@ -96,7 +97,7 @@ Smartphone_Price_Prediction/
 ### 1) Clone repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Sambram123/Smartphone-Price-Predictor
 cd Smartphone_Price_Prediction
 ```
 
