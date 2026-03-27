@@ -325,7 +325,7 @@ function Predictor() {
         {price !== null && (
           <div className="predictor-result">
             <div className="predictor-result-top">
-              <p className="predictor-result-title">Estimated Price</p>
+              <h1 className="predictor-result-title">Estimated Price</h1>
               <p className="predictor-result-subtitle">Based on the specifications you selected</p>
             </div>
             <div className="predictor-result-value" aria-live="polite">

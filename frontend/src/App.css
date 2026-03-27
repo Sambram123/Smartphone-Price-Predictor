@@ -198,7 +198,7 @@ button:hover {
 }
 
 .predictor-result-title {
-  font-size: 13px;
+  /* font-size: 13px; */
   color: #c7d2fe;
   font-weight: 800;
   margin-bottom: 6px;
