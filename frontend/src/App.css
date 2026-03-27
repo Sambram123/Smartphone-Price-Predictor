@@ -139,6 +139,8 @@ button:hover {
   box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
   transition: all 0.3s ease;
   text-transform: uppercase;
+  position: relative;
+  outline: none;
 }
 
 .predictor-button:hover {
@@ -146,42 +148,104 @@ button:hover {
   box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
 }
 
-.predictor-result {
-  background-image: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-  padding: 30px;
-  border-radius: 15px;
+.predictor-button:active {
+  transform: translateY(0);
+}
+
+.predictor-button:focus-visible {
+  box-shadow:
+    0 15px 40px rgba(102, 126, 234, 0.55),
+    0 0 0 4px rgba(118, 75, 162, 0.35);
+}
+
+.predictor-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+  transform: none;
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.25);
+}
+
+.predictor-error {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
   text-align: center;
-  box-shadow: 0 10px 30px rgba(132, 250, 176, 0.3);
+  font-weight: 600;
+}
+
+.predictor-field-error {
+  color: #fecaca;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  line-height: 1.25rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+.predictor-result {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 26px 24px;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(10px);
 }
 
 .predictor-result-title {
-  font-size: 14px;
-  color: #22c55e;
-  font-weight: 600;
-  margin-bottom: 10px;
+  font-size: 13px;
+  color: #c7d2fe;
+  font-weight: 800;
+  margin-bottom: 6px;
   text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+
+.predictor-result-subtitle {
+  color: #e5e7eb;
+  font-size: 14px;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.predictor-result-top {
+  margin-bottom: 14px;
+}
+
+.predictor-result-value {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.16), rgba(118, 75, 162, 0.12));
+  border: 1px solid rgba(102, 126, 234, 0.28);
+}
+
+.predictor-result-currency {
+  font-weight: 900;
+  font-size: 22px;
+  color: #e0e7ff;
+}
+
+.predictor-result-amount {
+  font-weight: 900;
+  font-size: 44px;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+  text-shadow: 0 10px 30px rgba(102, 126, 234, 0.25);
+}
+
+.predictor-result-unit {
+  font-size: 12px;
+  font-weight: 800;
   letter-spacing: 1px;
-}
-
-.predictor-result-value {
-  font-size: 48px;
-  font-weight: 800;
-  color: #065f46;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
-.predictor-result-value {
-  font-size: 48px;
-  font-weight: 800;
-  color: #ff0055;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  text-shadow: 0 0 20px rgba(255, 0, 85, 0.6);
+  color: #cbd5e1;
+  opacity: 0.95;
 }

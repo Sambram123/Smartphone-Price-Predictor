@@ -11,6 +11,93 @@ try:
 except Exception:
     pipeline = None
 
+KNOWN_BRANDS = [
+    "Alcatel",
+    "Apple",
+    "Blacear",
+    "Blacerry",
+    "Black",
+    "BlackZone",
+    "Callbar",
+    "Detel",
+    "Dublin",
+    "Easyfone",
+    "Ecotel",
+    "F-Fook",
+    "Forme",
+    "GAMMA",
+    "Gee",
+    "Gfive",
+    "Good",
+    "Google",
+    "Grabo",
+    "GreenBerry",
+    "Heemax",
+    "Hicell",
+    "Honor",
+    "Huawei",
+    "I",
+    "ITEL",
+    "InFocus",
+    "Infinix",
+    "Inovu",
+    "Intex",
+    "Itel",
+    "JIVI",
+    "Jivi",
+    "Jmax",
+    "Karbonn",
+    "Kechaoda",
+    "LG",
+    "Lava",
+    "Lenovo",
+    "MI3",
+    "MTR",
+    "Mafe",
+    "Megus",
+    "Meizu",
+    "Mi",
+    "Micax",
+    "Moto",
+    "Motorola",
+    "Muphone",
+    "Mymax",
+    "Nexus",
+    "Nokia",
+    "OPPO",
+    "OnePlus",
+    "POCO",
+    "Peace",
+    "Q-Tel",
+    "Realme",
+    "Redmi",
+    "Salora",
+    "Samsung",
+    "Snexian",
+    "Ssky",
+    "Tecno",
+    "Tork",
+    "Trio",
+    "Vivo",
+    "Wizphone",
+    "Yuho",
+    "iQOO",
+    "tecno",
+]
+
+KNOWN_BRANDS_LOWER = {b.lower() for b in KNOWN_BRANDS}
+
+
+def _normalize_brand(value: str) -> str:
+    raw = str(value or "").strip()
+    if not raw:
+        return raw
+    lower = raw.lower()
+    for b in KNOWN_BRANDS:
+        if b.lower() == lower:
+            return b
+    return raw
+
 REQUIRED_FIELDS = [
     "Brand",
     "Ratings",
@@ -49,7 +136,10 @@ def _validate_payload(data):
     if not brand:
         return None, "Brand must be a non-empty string."
 
-    cleaned = {"Brand": brand}
+    if brand.lower() not in KNOWN_BRANDS_LOWER:
+        return None, "Brand must be one of the supported values."
+
+    cleaned = {"Brand": _normalize_brand(brand)}
 
     for field in NUMERIC_FIELDS:
         try:
