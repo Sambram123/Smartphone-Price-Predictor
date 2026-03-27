@@ -1,6 +1,95 @@
 import { useState } from "react";
 
 function Predictor() {
+  const brands = [
+    "Alcatel",
+    "Apple",
+    "Blacear",
+    "Blacerry",
+    "Black",
+    "BlackZone",
+    "Callbar",
+    "Detel",
+    "Dublin",
+    "Easyfone",
+    "Ecotel",
+    "F-Fook",
+    "Forme",
+    "GAMMA",
+    "Gee",
+    "Gfive",
+    "Good",
+    "Google",
+    "Grabo",
+    "GreenBerry",
+    "Heemax",
+    "Hicell",
+    "Honor",
+    "Huawei",
+    "I",
+    "ITEL",
+    "InFocus",
+    "Infinix",
+    "Inovu",
+    "Intex",
+    "Itel",
+    "JIVI",
+    "Jivi",
+    "Jmax",
+    "Karbonn",
+    "Kechaoda",
+    "LG",
+    "Lava",
+    "Lenovo",
+    "MI3",
+    "MTR",
+    "Mafe",
+    "Megus",
+    "Meizu",
+    "Mi",
+    "Micax",
+    "Moto",
+    "Motorola",
+    "Muphone",
+    "Mymax",
+    "Nexus",
+    "Nokia",
+    "OPPO",
+    "OnePlus",
+    "POCO",
+    "Peace",
+    "Q-Tel",
+    "Realme",
+    "Redmi",
+    "Salora",
+    "Samsung",
+    "Snexian",
+    "Ssky",
+    "Tecno",
+    "Tork",
+    "Trio",
+    "Vivo",
+    "Wizphone",
+    "Yuho",
+    "iQOO",
+    "tecno"
+  ];
+
+  const normalizeBrand = (value) => {
+    const raw = String(value ?? "").trim();
+    if (!raw) return "";
+    const lower = raw.toLowerCase();
+    const canonical = brands.find((b) => b.toLowerCase() === lower);
+    return canonical || raw;
+  };
+
+  const isKnownBrand = (value) => {
+    const raw = String(value ?? "").trim();
+    if (!raw) return false;
+    const lower = raw.toLowerCase();
+    return brands.some((b) => b.toLowerCase() === lower);
+  };
+
   const numericFields = [
     "Ratings",
     "RAM",
@@ -29,7 +118,6 @@ function Predictor() {
 
   // Dropdown options with real-world values
   const dropdownOptions = {
-    Brand: [], // To be provided by user
     Ratings: [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0],
     RAM: [4, 6, 8, 12, 16],
     ROM: [32, 64, 128, 256, 512],
@@ -41,7 +129,8 @@ function Predictor() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    const nextValue = name === "Brand" ? normalizeBrand(value) : value;
+    setForm({ ...form, [name]: nextValue });
     setFieldErrors((prev) => ({ ...prev, [name]: "" }));
     setError("");
   };
@@ -51,6 +140,8 @@ function Predictor() {
 
     if (!form.Brand.trim()) {
       nextErrors.Brand = "Brand is required.";
+    } else if (!isKnownBrand(form.Brand)) {
+      nextErrors.Brand = "Please select a brand from the list.";
     }
 
     numericFields.forEach((field) => {
@@ -79,7 +170,7 @@ function Predictor() {
 
   const buildPayload = () => ({
     ...form,
-    Brand: form.Brand.trim(),
+    Brand: normalizeBrand(form.Brand),
     Ratings: Number(form.Ratings),
     RAM: Number(form.RAM),
     ROM: Number(form.ROM),
@@ -88,6 +179,14 @@ function Predictor() {
     Selfi_Cam: Number(form.Selfi_Cam),
     Battery_Power: Number(form.Battery_Power)
   });
+
+  const formatINR = (value) => {
+    try {
+      return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value);
+    } catch {
+      return String(value);
+    }
+  };
 
   const handleSubmit = async () => {
     setPrice(null);
@@ -137,6 +236,8 @@ function Predictor() {
     return labelMap[key] || key;
   };
 
+  const formattedPrice = price === null ? null : formatINR(price);
+
   return (
     <div className="predictor-wrapper">
       {/* Main Container */}
@@ -151,6 +252,11 @@ function Predictor() {
 
         {/* Form Grid - 4 columns */}
         <div className="predictor-grid">
+          <datalist id="brand-options">
+            {brands.map((brand) => (
+              <option key={brand} value={brand} />
+            ))}
+          </datalist>
           {Object.keys(form).map((key) => (
             <div key={key} className="predictor-field">
               <label className="predictor-label">{getLabel(key)}</label>
@@ -160,7 +266,8 @@ function Predictor() {
                   name={key}
                   value={form[key]}
                   onChange={handleChange}
-                  placeholder="Enter brand name (e.g., Apple, Samsung)"
+                  list="brand-options"
+                  placeholder="Type or select a brand (e.g., Apple, Samsung)"
                   className="predictor-input"
                 />
               ) : key === "Ratings" ? (
@@ -195,9 +302,7 @@ function Predictor() {
                 </select>
               )}
               {fieldErrors[key] && (
-                <p style={{ color: "#ef4444", marginTop: "6px", fontSize: "0.85rem" }}>
-                  {fieldErrors[key]}
-                </p>
+                <p className="predictor-field-error">{fieldErrors[key]}</p>
               )}
             </div>
           ))}
@@ -211,16 +316,23 @@ function Predictor() {
         </div>
 
         {error && (
-          <p style={{ color: "#ef4444", textAlign: "center", marginTop: "8px" }}>
+          <div className="predictor-error" role="alert" aria-live="polite">
             {error}
-          </p>
+          </div>
         )}
 
         {/* Result Display */}
         {price !== null && (
           <div className="predictor-result">
-            <p className="predictor-result-title">Estimated Price</p>
-            <h2 className="predictor-result-value">💰 ₹ {price}</h2>
+            <div className="predictor-result-top">
+              <p className="predictor-result-title">Estimated Price</p>
+              <p className="predictor-result-subtitle">Based on the specifications you selected</p>
+            </div>
+            <div className="predictor-result-value" aria-live="polite">
+              <span className="predictor-result-currency">₹</span>
+              <span className="predictor-result-amount">{formattedPrice}</span>
+              <span className="predictor-result-unit">INR</span>
+            </div>
           </div>
         )}
       </div>
