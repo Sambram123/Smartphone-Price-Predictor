@@ -115,6 +115,7 @@ function Predictor() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [region, setRegion] = useState("India");
 
   // Dropdown options with real-world values
   const dropdownOptions = {
@@ -188,6 +189,27 @@ function Predictor() {
     }
   };
 
+  const regionConfig = {
+    India: { currency: "INR", locale: "en-IN", rate: 1 },
+    USA: { currency: "USD", locale: "en-US", rate: 1 / 83 },
+    Europe: { currency: "EUR", locale: "de-DE", rate: 1 / 90 },
+    Japan: { currency: "JPY", locale: "ja-JP", rate: 1.8 }
+  };
+
+  const formatByRegion = (inrValue, selectedRegion) => {
+    const cfg = regionConfig[selectedRegion] || regionConfig.India;
+    const converted = Math.round(Number(inrValue) * cfg.rate);
+    try {
+      return new Intl.NumberFormat(cfg.locale, {
+        style: "currency",
+        currency: cfg.currency,
+        maximumFractionDigits: 0
+      }).format(converted);
+    } catch {
+      return String(converted);
+    }
+  };
+
   const handleSubmit = async () => {
     setPrice(null);
     setError("");
@@ -237,6 +259,7 @@ function Predictor() {
   };
 
   const formattedPrice = price === null ? null : formatINR(price);
+  const formattedRegionalPrice = price === null ? null : formatByRegion(price, region);
 
   return (
     <div className="predictor-wrapper">
@@ -328,10 +351,31 @@ function Predictor() {
               <h1 className="predictor-result-title">Estimated Price</h1>
               <p className="predictor-result-subtitle">Based on the specifications you selected</p>
             </div>
+            <div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "16px",
+    gap: "12px",
+    flexWrap: "wrap"
+  }}
+>
+              <select
+                className="predictor-input"
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+                aria-label="Select region for pricing"
+                style={{ maxWidth: "320px" }}
+              >
+                <option value="India">India (INR ₹)</option>
+                <option value="USA">USA (USD $)</option>
+                <option value="Europe">Europe (EUR €)</option>
+                <option value="Japan">Japan (YEN ¥)</option>
+              </select>
+            </div>
             <div className="predictor-result-value" aria-live="polite">
-              <span className="predictor-result-currency">₹</span>
-              <span className="predictor-result-amount">{formattedPrice}</span>
-              <span className="predictor-result-unit">INR</span>
+              <span className="predictor-result-amount">{formattedRegionalPrice}</span>
             </div>
           </div>
         )}
