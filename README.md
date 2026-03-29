@@ -8,14 +8,14 @@
 
 
 Predict smartphone prices from key device specifications using an end-to-end ML workflow:
-- model training in Jupyter Notebook
+- Model training in Jupyter Notebook
 - Flask backend inference API
 - React frontend prediction UI
 
 ## Live Demo
 
-- Frontend: `Add your deployed frontend URL here`
-- Backend API: `Add your deployed backend URL here`
+- Frontend: `....`
+- Backend API: `....`
 
 ## Table of Contents
 
@@ -49,8 +49,6 @@ The model/API expects these fields:
 - `Battery_Power` (number)
 
 ## Screenshots
-
-Add screenshots in a folder like `assets/` and update paths below.
 
 ### App UI
 
