@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 function Predictor() {
   const brands = [
@@ -116,6 +116,12 @@ function Predictor() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [region, setRegion] = useState("India");
+  const [animatedRegionalNumber, setAnimatedRegionalNumber] = useState(null);
+  const [flashDirection, setFlashDirection] = useState(null);
+
+  const prevDisplayedRef = useRef(null); // tracks last fully-displayed numeric value
+  const rafRef = useRef(null);
+  const animatedNumberRef = useRef(null); // tracks current animation numeric value
 
   // Dropdown options with real-world values
   const dropdownOptions = {
@@ -210,6 +216,24 @@ function Predictor() {
     }
   };
 
+  const getRegionalNumber = (inrValue, selectedRegion) => {
+    const cfg = regionConfig[selectedRegion] || regionConfig.India;
+    return Math.round(Number(inrValue) * cfg.rate);
+  };
+
+  const formatNumberByRegion = (regionalNumber, selectedRegion) => {
+    const cfg = regionConfig[selectedRegion] || regionConfig.India;
+    try {
+      return new Intl.NumberFormat(cfg.locale, {
+        style: "currency",
+        currency: cfg.currency,
+        maximumFractionDigits: 0
+      }).format(regionalNumber);
+    } catch {
+      return String(regionalNumber);
+    }
+  };
+
   const handleSubmit = async () => {
     setPrice(null);
     setError("");
@@ -260,6 +284,82 @@ function Predictor() {
 
   const formattedPrice = price === null ? null : formatINR(price);
   const formattedRegionalPrice = price === null ? null : formatByRegion(price, region);
+
+  const targetRegionalNumber = price === null ? null : getRegionalNumber(price, region);
+  const numberToDisplay = animatedRegionalNumber ?? targetRegionalNumber;
+
+  useEffect(() => {
+    // Avoid animating until we have a prediction.
+    if (price === null || price === undefined) return;
+    if (targetRegionalNumber === null || Number.isNaN(targetRegionalNumber)) return;
+
+    const start = animatedNumberRef.current ?? prevDisplayedRef.current;
+    const target = targetRegionalNumber;
+
+    // Initial render: set immediately (no animation from 0).
+    if (start === null || start === undefined) {
+      prevDisplayedRef.current = target;
+      animatedNumberRef.current = target;
+      setAnimatedRegionalNumber(target);
+      setFlashDirection(null);
+      return;
+    }
+
+    // If value hasn't changed, don't restart animation.
+    if (start === target) {
+      setFlashDirection(null);
+      return;
+    }
+
+    const direction = target > start ? "up" : "down";
+    // setFlashDirection(direction);
+
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+
+    const durationMs = 1800;
+    const startTime = performance.now();
+
+    const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+
+    const tick = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / durationMs);
+      const eased = easeOutCubic(progress);
+
+      const current = start + (target - start) * eased;
+      const rounded = Math.round(current);
+
+      animatedNumberRef.current = rounded;
+      setAnimatedRegionalNumber(rounded);
+
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        prevDisplayedRef.current = target;
+        animatedNumberRef.current = target;
+      
+        // ✅ Apply color AFTER animation finishes
+        setFlashDirection(direction);
+      
+        // ✅ Remove color after short delay
+        setTimeout(() => {
+          setFlashDirection(null);
+        }, 800);
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+
+    // const flashTimeout = window.setTimeout(() => {
+    //   setFlashDirection(null);
+    // }, 450);
+
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      // window.clearTimeout(flashTimeout);
+      setFlashDirection(null);
+    };
+  }, [price, region, targetRegionalNumber]);
 
   return (
     <div className="predictor-wrapper">
@@ -375,7 +475,18 @@ function Predictor() {
               </select>
             </div>
             <div className="predictor-result-value" aria-live="polite">
-              <span className="predictor-result-amount">{formattedRegionalPrice}</span>
+              <span
+                className={[
+                  "predictor-result-amount",
+                  flashDirection === "up"
+                    ? "predictor-result-amount--up"
+                    : flashDirection === "down"
+                      ? "predictor-result-amount--down"
+                      : ""
+                ].join(" ")}
+              >
+                {numberToDisplay === null ? "" : formatNumberByRegion(numberToDisplay, region)}
+              </span>
             </div>
           </div>
         )}

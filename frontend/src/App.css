@@ -242,6 +242,20 @@ button:hover {
   text-shadow: 0 10px 30px rgba(102, 126, 234, 0.25);
 }
 
+.predictor-result-amount--up {
+  color: #34d399;
+  text-shadow: 0 0 20px rgba(52, 211, 153, 0.35), 0 10px 30px rgba(52, 211, 153, 0.18);
+  transform: scale(1.02);
+  transition: color 250ms ease, text-shadow 250ms ease, transform 50ms ease;
+}
+
+.predictor-result-amount--down {
+  color: #fb7185;
+  text-shadow: 0 0 20px rgba(251, 113, 133, 0.35), 0 10px 30px rgba(251, 113, 133, 0.18);
+  transform: scale(1.02);
+  transition: color 250ms ease, text-shadow 250ms ease, transform 250ms ease;
+}
+
 .predictor-result-unit {
   font-size: 12px;
   font-weight: 800;
