@@ -53,6 +53,12 @@ button:hover {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+@media (max-width: 900px), (prefers-reduced-motion: reduce) {
+  .predictor-wrapper {
+    background-attachment: scroll;
+  }
+}
+
 .predictor-card {
   width: 100%;
   max-width: 1100px;
@@ -195,6 +201,10 @@ button:hover {
   text-align: center;
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(10px);
+  scroll-margin-top: 32px;
+  scroll-margin-bottom: 32px;
+  contain: layout style;
+  transform: translateZ(0);
 }
 
 .predictor-result-title {

@@ -122,6 +122,9 @@ function Predictor() {
   const prevDisplayedRef = useRef(null); // tracks last fully-displayed numeric value
   const rafRef = useRef(null);
   const animatedNumberRef = useRef(null); // tracks current animation numeric value
+  const resultSectionRef = useRef(null);
+  const lastPublishedRoundRef = useRef(null);
+  const flashTimeoutRef = useRef(null);
 
   // Dropdown options with real-world values
   const dropdownOptions = {
@@ -289,6 +292,37 @@ function Predictor() {
   const numberToDisplay = animatedRegionalNumber ?? targetRegionalNumber;
 
   useEffect(() => {
+    if (price === null || price === undefined) return;
+    const node = resultSectionRef.current;
+    if (!node) return;
+
+    let cancelled = false;
+    let innerRaf = 0;
+
+    const scrollToResult = () => {
+      if (cancelled) return;
+      const reduced =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      node.scrollIntoView({
+        behavior: reduced ? "auto" : "smooth",
+        block: "center",
+        inline: "nearest"
+      });
+    };
+
+    const outerRaf = requestAnimationFrame(() => {
+      innerRaf = requestAnimationFrame(scrollToResult);
+    });
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(outerRaf);
+      if (innerRaf) cancelAnimationFrame(innerRaf);
+    };
+  }, [price]);
+
+  useEffect(() => {
     // Avoid animating until we have a prediction.
     if (price === null || price === undefined) return;
     if (targetRegionalNumber === null || Number.isNaN(targetRegionalNumber)) return;
@@ -300,6 +334,7 @@ function Predictor() {
     if (start === null || start === undefined) {
       prevDisplayedRef.current = target;
       animatedNumberRef.current = target;
+      lastPublishedRoundRef.current = target;
       setAnimatedRegionalNumber(target);
       setFlashDirection(null);
       return;
@@ -327,36 +362,37 @@ function Predictor() {
       const eased = easeOutCubic(progress);
 
       const current = start + (target - start) * eased;
-      const rounded = Math.round(current);
+      const rounded =
+        progress < 1 ? Math.round(current) : target;
 
       animatedNumberRef.current = rounded;
-      setAnimatedRegionalNumber(rounded);
+      if (rounded !== lastPublishedRoundRef.current || progress >= 1) {
+        lastPublishedRoundRef.current = rounded;
+        setAnimatedRegionalNumber(rounded);
+      }
 
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(tick);
       } else {
         prevDisplayedRef.current = target;
         animatedNumberRef.current = target;
-      
-        // ✅ Apply color AFTER animation finishes
+        lastPublishedRoundRef.current = target;
+        if (flashTimeoutRef.current) window.clearTimeout(flashTimeoutRef.current);
+
         setFlashDirection(direction);
-      
-        // ✅ Remove color after short delay
-        setTimeout(() => {
+        flashTimeoutRef.current = window.setTimeout(() => {
           setFlashDirection(null);
+          flashTimeoutRef.current = null;
         }, 800);
       }
     };
 
     rafRef.current = requestAnimationFrame(tick);
 
-    // const flashTimeout = window.setTimeout(() => {
-    //   setFlashDirection(null);
-    // }, 450);
-
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      // window.clearTimeout(flashTimeout);
+      if (flashTimeoutRef.current) window.clearTimeout(flashTimeoutRef.current);
+      flashTimeoutRef.current = null;
       setFlashDirection(null);
     };
   }, [price, region, targetRegionalNumber]);
@@ -446,7 +482,7 @@ function Predictor() {
 
         {/* Result Display */}
         {price !== null && (
-          <div className="predictor-result">
+          <div className="predictor-result" ref={resultSectionRef} tabIndex={-1}>
             <div className="predictor-result-top">
               <h1 className="predictor-result-title">Estimated Price</h1>
               <p className="predictor-result-subtitle">Based on the specifications you selected</p>

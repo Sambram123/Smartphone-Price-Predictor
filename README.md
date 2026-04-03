@@ -8,7 +8,7 @@
 
 
 Predict smartphone prices from key device specifications using an end-to-end ML workflow:
-- Model training in Jupyter Notebook
+- Model training in Jupyter Notebook using Scikit-Learn
 - Flask backend inference API
 - React frontend prediction UI
 
