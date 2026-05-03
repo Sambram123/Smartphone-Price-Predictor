@@ -17,6 +17,10 @@ CORS(app)
 _cb_model = None
 _CAT_FEATURES = ("Brand",)
 _FEATURE_COLS = ()
+_brand_stats = None       # DataFrame: Brand, brand_avg_price, brand_min_price, brand_max_price
+_global_avg = 0.0
+_global_min = 0.0
+_global_max = 0.0
 
 _pkl = Path(__file__).resolve().parent / "mobile_price_pipeline.pkl"
 if not _pkl.is_file():
@@ -29,27 +33,74 @@ try:
         _cb_model = _bundle["model"]
         _CAT_FEATURES = tuple(_bundle.get("cat_features", ["Brand"]))
         _FEATURE_COLS = tuple(_bundle.get("feature_cols", []))
+        _brand_stats = _bundle.get("brand_stats", None)
+        _global_avg = _bundle.get("global_avg", 0.0)
+        _global_min = _bundle.get("global_min", 0.0)
+        _global_max = _bundle.get("global_max", 0.0)
     else:
         _cb_model = _bundle
 except Exception as exc:
     print("Warning: could not load mobile_price_pipeline.pkl:", exc)
 
 
+def _get_brand_stats(brand: str):
+    """Look up brand_avg/min/max from training data; fallback to global stats."""
+    if _brand_stats is not None:
+        match = _brand_stats[_brand_stats["Brand"] == brand]
+        if len(match):
+            return (
+                match["brand_avg_price"].values[0],
+                match["brand_min_price"].values[0],
+                match["brand_max_price"].values[0],
+            )
+    return _global_avg, _global_min, _global_max
+
+
 def _engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     """Must match Smartphone_Price_Predictor.ipynb definitions."""
     out = df.copy()
-    out["performance_score"] = out["RAM"] * np.sqrt(out["Primary_Cam"]) + out["Battery_Power"] / 500.0
-    out["value_index"] = (out["RAM"] * out["ROM"]) / (out["Mobile_Size"] ** 2 + 0.1)
+
+    # spec_score: composite hardware quality metric
+    out["spec_score"] = (
+        np.log1p(out["RAM"])
+        + np.log1p(out["ROM"])
+        + np.log1p(out["Battery_Power"])
+        + np.log1p(out["Primary_Cam"])
+        + np.log1p(out["Selfi_Cam"])
+    )
+
+    # RAM-to-ROM ratio
+    out["ram_rom_ratio"] = out["RAM"] / (out["ROM"] + 1)
+
+    # Camera total
+    out["total_cam"] = out["Primary_Cam"] + out["Selfi_Cam"]
+
+    # Brand-level price stats
+    brand = str(out["Brand"].iloc[0])
+    bavg, bmin, bmax = _get_brand_stats(brand)
+    out["brand_avg_price"] = bavg
+    out["brand_min_price"] = bmin
+    out["brand_max_price"] = bmax
+
     for c in _CAT_FEATURES:
         out[c] = out[c].astype(str)
     return out
 
 
 def _predict(df_base: pd.DataFrame):
+    """
+    Brand-relative prediction:
+    Model predicts relative_price; final = relative_price + brand_avg_price.
+    """
     eng = _engineer_features(df_base)
+    brand_avg = eng["brand_avg_price"].values[0]
+
     if _FEATURE_COLS:
         eng = eng[list(_FEATURE_COLS)]
-    return _cb_model.predict(eng)
+
+    relative_pred = _cb_model.predict(eng)[0]
+    final_price = relative_pred + brand_avg
+    return max(0, final_price)
 
 REQUIRED_FIELDS = ["Brand", "Ratings", "RAM", "ROM", "Mobile_Size",
                    "Primary_Cam", "Selfi_Cam", "Battery_Power"]
@@ -123,7 +174,7 @@ def predict():
     df = pd.DataFrame([cleaned], columns=REQUIRED_FIELDS)
 
     try:
-        prediction = _predict(df)[0]
+        prediction = _predict(df)
     except Exception as exc:
         return jsonify({"error": f"Prediction failed: {exc}"}), 400
 
