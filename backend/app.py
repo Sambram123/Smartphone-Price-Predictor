@@ -1,75 +1,44 @@
+from pathlib import Path
+import sys
+
 from flask import Flask, request, jsonify
 import pandas as pd
 import joblib
 from flask_cors import CORS
 
 
+
+
 app = Flask(__name__)
 CORS(app)
-try:
-    pipeline = joblib.load("mobile_price_pipeline.pkl")
-except Exception:
-    pipeline = None
 
-KNOWN_BRANDS = [
-    "Alcatel","Apple","Blacear","Blacerry","Black","BlackZone","Callbar","Detel","Dublin","Easyfone","Ecotel","F-Fook","Forme","GAMMA","Gee","Gfive","Good","Google","Grabo","GreenBerry", "Heemax","Hicell","Honor","Huawei","I","ITEL","InFocus","Infinix","Inovu","Intex","Itel","JIVI","Jivi","Jmax","Karbonn","Kechaoda","LG","Lava","Lenovo","MI3","MTR","Mafe","Megus","Meizu","Mi","Micax","Moto","Motorola","Muphone","Mymax","Nexus","Nokia","OPPO","OnePlus","POCO","Peace","Q-Tel","Realme","Redmi","Salora","Samsung","Snexian","Ssky","Tecno","Tork","Trio","Vivo","Wizphone","Yuho","iQOO","tecno",
-]
+# ── Model ──────────────────────────────────────────────────────────────────
 
-KNOWN_BRANDS_LOWER = {b.lower() for b in KNOWN_BRANDS}
+pipeline = joblib.load( "mobile_price_pipeline.pkl")
 
-
-def _normalize_brand(value: str) -> str:
-    raw = str(value or "").strip()
-    if not raw:
-        return raw
-    lower = raw.lower()
-    for b in KNOWN_BRANDS:
-        if b.lower() == lower:
-            return b
-    return raw
-
-REQUIRED_FIELDS = [
-    "Brand",
-    "Ratings",
-    "RAM",
-    "ROM",
-    "Mobile_Size",
-    "Primary_Cam",
-    "Selfi_Cam",
-    "Battery_Power",
-]
-
-NUMERIC_FIELDS = [
-    "Ratings",
-    "RAM",
-    "ROM",
-    "Mobile_Size",
-    "Primary_Cam",
-    "Selfi_Cam",
-    "Battery_Power",
-]
+REQUIRED_FIELDS = ["Brand", "Ratings", "RAM", "ROM", "Mobile_Size",
+                   "Primary_Cam", "Selfi_Cam", "Battery_Power"]
+NUMERIC_FIELDS  = ["Ratings", "RAM", "ROM", "Mobile_Size",
+                   "Primary_Cam", "Selfi_Cam", "Battery_Power"]
 
 
 def _validate_payload(data):
     if not isinstance(data, dict):
         return None, "Invalid payload. Expected a JSON object."
 
-    missing_fields = [field for field in REQUIRED_FIELDS if field not in data]
-    if missing_fields:
-        return None, f"Missing required fields: {', '.join(missing_fields)}"
+    missing = [f for f in REQUIRED_FIELDS if f not in data]
+    if missing:
+        return None, f"Missing required fields: {', '.join(missing)}"
 
-    extra_fields = [field for field in data.keys() if field not in REQUIRED_FIELDS]
-    if extra_fields:
-        return None, f"Unexpected fields: {', '.join(extra_fields)}"
+    extra = [f for f in data if f not in REQUIRED_FIELDS]
+    if extra:
+        return None, f"Unexpected fields: {', '.join(extra)}"
 
     brand = str(data.get("Brand", "")).strip()
     if not brand:
         return None, "Brand must be a non-empty string."
 
-    if brand.lower() not in KNOWN_BRANDS_LOWER:
-        return None, "Brand must be one of the supported values."
-
-    cleaned = {"Brand": _normalize_brand(brand)}
+    cleaned = {"Brand": brand}
 
     for field in NUMERIC_FIELDS:
         try:
@@ -77,16 +46,31 @@ def _validate_payload(data):
         except (TypeError, ValueError):
             return None, f"{field} must be a numeric value."
 
-    if not 1 <= cleaned["Ratings"] <= 5:
+    # Range guards
+    if not (1 <= cleaned["Ratings"] <= 5):
         return None, "Ratings must be between 1 and 5."
-    if cleaned["RAM"] <= 0 or cleaned["ROM"] <= 0 or cleaned["Mobile_Size"] <= 0:
-        return None, "RAM, ROM and Mobile_Size must be greater than 0."
-    if cleaned["Primary_Cam"] <= 0 or cleaned["Selfi_Cam"] <= 0:
-        return None, "Primary_Cam and Selfi_Cam must be greater than 0."
+    if cleaned["RAM"] <= 0:
+        return None, "RAM must be greater than 0."
+    if cleaned["ROM"] <= 0:
+        return None, "Storage (ROM) must be greater than 0."
+    if cleaned["Mobile_Size"] <= 0:
+        return None, "Screen size (Mobile_Size) must be greater than 0."
+    if cleaned["Primary_Cam"] <= 0:
+        return None, "Primary camera must be greater than 0 MP."
+    if cleaned["Selfi_Cam"] <= 0:
+        return None, "Selfie camera must be greater than 0 MP."
     if cleaned["Battery_Power"] <= 0:
-        return None, "Battery_Power must be greater than 0."
+        return None, "Battery power must be greater than 0 mAh."
 
     return cleaned, None
+
+
+# ── Routes ─────────────────────────────────────────────────────────────────
+@app.route("/brands", methods=["GET"])
+def get_brands():
+    """Return a small set of common brand examples for the frontend."""
+    return jsonify({"brands": ["Apple", "Samsung", "OnePlus", "OPPO", "Vivo", "Realme", "Nokia"]})
+
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -97,19 +81,20 @@ def predict():
     if data is None:
         return jsonify({"error": "Invalid or missing JSON payload."}), 400
 
-    cleaned_data, error = _validate_payload(data)
+    cleaned, error = _validate_payload(data)
     if error:
         return jsonify({"error": error}), 400
 
-    df = pd.DataFrame([cleaned_data], columns=REQUIRED_FIELDS)
+    df = pd.DataFrame([cleaned], columns=REQUIRED_FIELDS)
 
     try:
         prediction = pipeline.predict(df)[0]
-    except Exception:
-        return jsonify({"error": "Prediction failed due to invalid input format."}), 400
+    except Exception as exc:
+        return jsonify({"error": f"Prediction failed: {exc}"}), 400
 
     return jsonify({"prediction": int(round(float(prediction)))})
 
+
 if __name__ == "__main__":
-    print("Backend is running")
+    print("Backend running at http://127.0.0.1:5000")
     app.run(debug=True)

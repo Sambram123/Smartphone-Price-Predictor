@@ -1,534 +1,416 @@
 import { useEffect, useRef, useState } from "react";
 
-function Predictor() {
-  const brands = [
-    "Alcatel",
-    "Apple",
-    "Blacear",
-    "Blacerry",
-    "Black",
-    "BlackZone",
-    "Callbar",
-    "Detel",
-    "Dublin",
-    "Easyfone",
-    "Ecotel",
-    "F-Fook",
-    "Forme",
-    "GAMMA",
-    "Gee",
-    "Gfive",
-    "Good",
-    "Google",
-    "Grabo",
-    "GreenBerry",
-    "Heemax",
-    "Hicell",
-    "Honor",
-    "Huawei",
-    "I",
-    "ITEL",
-    "InFocus",
-    "Infinix",
-    "Inovu",
-    "Intex",
-    "Itel",
-    "JIVI",
-    "Jivi",
-    "Jmax",
-    "Karbonn",
-    "Kechaoda",
-    "LG",
-    "Lava",
-    "Lenovo",
-    "MI3",
-    "MTR",
-    "Mafe",
-    "Megus",
-    "Meizu",
-    "Mi",
-    "Micax",
-    "Moto",
-    "Motorola",
-    "Muphone",
-    "Mymax",
-    "Nexus",
-    "Nokia",
-    "OPPO",
-    "OnePlus",
-    "POCO",
-    "Peace",
-    "Q-Tel",
-    "Realme",
-    "Redmi",
-    "Salora",
-    "Samsung",
-    "Snexian",
-    "Ssky",
-    "Tecno",
-    "Tork",
-    "Trio",
-    "Vivo",
-    "Wizphone",
-    "Yuho",
-    "iQOO",
-    "tecno"
-  ];
+/* ── Icon helpers (inline SVG, no external dep) ── */
+const IconPhone = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+    <line x1="12" y1="18" x2="12.01" y2="18"/>
+  </svg>
+);
+const IconCpu = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/>
+    <line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/>
+    <line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/>
+    <line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/>
+    <line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/>
+  </svg>
+);
+const IconHardDrive = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="10.01" y2="16"/>
+  </svg>
+);
+const IconBattery = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="1" y="6" width="18" height="12" rx="2" ry="2"/><line x1="23" y1="13" x2="23" y2="11"/>
+  </svg>
+);
+const IconMonitor = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+  </svg>
+);
+const IconCamera = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+    <circle cx="12" cy="13" r="4"/>
+  </svg>
+);
+const IconSparkles = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
+  </svg>
+);
+const IconLoader = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
+    <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+    <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
+    <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+  </svg>
+);
+/* ── Brands list ── */
+const BRANDS = [
+  "Alcatel","Apple","Blacear","Blacerry","Black","BlackZone","Callbar","Detel","Dublin",
+  "Easyfone","Ecotel","F-Fook","Forme","GAMMA","Gee","Gfive","Good","Google","Grabo",
+  "GreenBerry","Heemax","Hicell","Honor","Huawei","I","ITEL","InFocus","Infinix","Inovu",
+  "Intex","Itel","JIVI","Jivi","Jmax","Karbonn","Kechaoda","LG","Lava","Lenovo","MI3",
+  "MTR","Mafe","Megus","Meizu","Mi","Micax","Moto","Motorola","Muphone","Mymax","Nexus",
+  "Nokia","OPPO","OnePlus","POCO","Peace","Q-Tel","Realme","Redmi","Salora","Samsung",
+  "Snexian","Ssky","Tecno","Tork","Trio","Vivo","Wizphone","Yuho","iQOO","tecno",
+];
 
-  const normalizeBrand = (value) => {
-    const raw = String(value ?? "").trim();
-    if (!raw) return "";
-    const lower = raw.toLowerCase();
-    const canonical = brands.find((b) => b.toLowerCase() === lower);
-    return canonical || raw;
-  };
+/* ── Slider config ── */
+const SLIDERS = [
+  { key: "RAM",           label: "RAM",             unit: "GB",   min: 1,    max: 16,   step: 1,    defaultVal: 8,    cls: "slider--ram",     Icon: IconCpu     },
+  { key: "ROM",           label: "Storage",         unit: "GB",   min: 16,   max: 512,  step: 16,   defaultVal: 128,  cls: "slider--storage", Icon: IconHardDrive },
+  { key: "Battery_Power", label: "Battery Capacity",unit: "mAh",  min: 1000, max: 7000, step: 500,  defaultVal: 4000, cls: "slider--battery", Icon: IconBattery },
+  { key: "Mobile_Size",   label: "Screen Size",     unit: '"',    min: 4.5,  max: 7.5,  step: 0.1,  defaultVal: 6.1,  cls: "slider--screen",  Icon: IconMonitor },
+  { key: "Primary_Cam",   label: "Camera",          unit: "MP",   min: 2,    max: 200,  step: 1,    defaultVal: 48,   cls: "slider--camera",  Icon: IconCamera  },
+];
 
-  const isKnownBrand = (value) => {
-    const raw = String(value ?? "").trim();
-    if (!raw) return false;
-    const lower = raw.toLowerCase();
-    return brands.some((b) => b.toLowerCase() === lower);
-  };
+/* ── Region config ── */
+const REGION_CONFIG = {
+  India:  { currency: "INR", locale: "en-IN",  rate: 1       },
+  USA:    { currency: "USD", locale: "en-US",  rate: 1 / 83  },
+  Europe: { currency: "EUR", locale: "de-DE",  rate: 1 / 90  },
+  Japan:  { currency: "JPY", locale: "ja-JP",  rate: 1.8     },
+};
 
-  const numericFields = [
-    "Ratings",
-    "RAM",
-    "ROM",
-    "Mobile_Size",
-    "Primary_Cam",
-    "Selfi_Cam",
-    "Battery_Power"
-  ];
+/* ── Helpers ── */
+const pct = (val, min, max) => `${Math.round(((val - min) / (max - min)) * 100)}%`;
 
-  const [form, setForm] = useState({
-    Brand: "",
-    Ratings: "",
-    RAM: "",
-    ROM: "",
-    Mobile_Size: "",
-    Primary_Cam: "",
-    Selfi_Cam: "",
-    Battery_Power: ""
-  });
+function formatRegional(num, region) {
+  const cfg = REGION_CONFIG[region] || REGION_CONFIG.India;
+  const converted = Math.round(num * cfg.rate);
+  try {
+    return new Intl.NumberFormat(cfg.locale, {
+      style: "currency", currency: cfg.currency, maximumFractionDigits: 0,
+    }).format(converted);
+  } catch { return String(converted); }
+}
 
-  const [price, setPrice] = useState(null);
-  const [error, setError] = useState("");
-  const [fieldErrors, setFieldErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
+function getRegionalNumber(inr, region) {
+  const cfg = REGION_CONFIG[region] || REGION_CONFIG.India;
+  return Math.round(inr * cfg.rate);
+}
+
+export default function Predictor() {
+  /* ── Form state ── */
+  const initSliders = () =>
+    Object.fromEntries(SLIDERS.map((s) => [s.key, s.defaultVal]));
+
+  const [brand, setBrand] = useState("Apple");
+  const [sliders, setSliders] = useState(initSliders);
   const [region, setRegion] = useState("India");
-  const [animatedRegionalNumber, setAnimatedRegionalNumber] = useState(null);
-  const [flashDirection, setFlashDirection] = useState(null);
 
-  const prevDisplayedRef = useRef(null); // tracks last fully-displayed numeric value
+  /* ── Result / UI state ── */
+  const [price, setPrice] = useState(null);        // raw INR from backend
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [flashDir, setFlashDir] = useState(null);
+
+  /* ── Animated counter ── */
+  const [displayNum, setDisplayNum] = useState(null);
   const rafRef = useRef(null);
-  const animatedNumberRef = useRef(null); // tracks current animation numeric value
-  const resultSectionRef = useRef(null);
-  const lastPublishedRoundRef = useRef(null);
-  const flashTimeoutRef = useRef(null);
+  const animRef = useRef(null);
+  const prevRef = useRef(null);
+  const lastPubRef = useRef(null);
+  const flashTimerRef = useRef(null);
 
-  // Dropdown options with real-world values
-  const dropdownOptions = {
-    Ratings: [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0],
-    RAM: [4, 6, 8, 12, 16],
-    ROM: [32, 64, 128, 256, 512],
-    Mobile_Size: [6.0, 6.1, 6.5, 6.7, 6.9, 7.0],
-    Primary_Cam: [8, 12, 13, 16, 20, 48, 64, 108],
-    Selfi_Cam: [5, 8, 12, 16, 20],
-    Battery_Power: [2500, 3000, 4000, 4500, 5000, 5500, 6000]
+  /* ── Slider change ── */
+  const handleSlider = (key, value) => {
+    setSliders((prev) => ({ ...prev, [key]: Number(value) }));
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    const nextValue = name === "Brand" ? normalizeBrand(value) : value;
-    setForm({ ...form, [name]: nextValue });
-    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
-    setError("");
-  };
-
-  const validateForm = () => {
-    const nextErrors = {};
-
-    if (!form.Brand.trim()) {
-      nextErrors.Brand = "Brand is required.";
-    } else if (!isKnownBrand(form.Brand)) {
-      nextErrors.Brand = "Please select a brand from the list.";
-    }
-
-    numericFields.forEach((field) => {
-      const value = form[field];
-      if (value === "" || value === null || value === undefined) {
-        nextErrors[field] = `${getLabel(field)} is required.`;
-        return;
-      }
-
-      const parsed = Number(value);
-      if (Number.isNaN(parsed)) {
-        nextErrors[field] = `${getLabel(field)} must be a number.`;
-      }
-    });
-
-    if (!nextErrors.Ratings) {
-      const rating = Number(form.Ratings);
-      if (rating < 1 || rating > 5) {
-        nextErrors.Ratings = "Rating must be between 1 and 5.";
-      }
-    }
-
-    setFieldErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
-  };
-
-  const buildPayload = () => ({
-    ...form,
-    Brand: normalizeBrand(form.Brand),
-    Ratings: Number(form.Ratings),
-    RAM: Number(form.RAM),
-    ROM: Number(form.ROM),
-    Mobile_Size: Number(form.Mobile_Size),
-    Primary_Cam: Number(form.Primary_Cam),
-    Selfi_Cam: Number(form.Selfi_Cam),
-    Battery_Power: Number(form.Battery_Power)
-  });
-
-  const formatINR = (value) => {
-    try {
-      return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value);
-    } catch {
-      return String(value);
-    }
-  };
-
-  const regionConfig = {
-    India: { currency: "INR", locale: "en-IN", rate: 1 },
-    USA: { currency: "USD", locale: "en-US", rate: 1 / 83 },
-    Europe: { currency: "EUR", locale: "de-DE", rate: 1 / 90 },
-    Japan: { currency: "JPY", locale: "ja-JP", rate: 1.8 }
-  };
-
-  const formatByRegion = (inrValue, selectedRegion) => {
-    const cfg = regionConfig[selectedRegion] || regionConfig.India;
-    const converted = Math.round(Number(inrValue) * cfg.rate);
-    try {
-      return new Intl.NumberFormat(cfg.locale, {
-        style: "currency",
-        currency: cfg.currency,
-        maximumFractionDigits: 0
-      }).format(converted);
-    } catch {
-      return String(converted);
-    }
-  };
-
-  const getRegionalNumber = (inrValue, selectedRegion) => {
-    const cfg = regionConfig[selectedRegion] || regionConfig.India;
-    return Math.round(Number(inrValue) * cfg.rate);
-  };
-
-  const formatNumberByRegion = (regionalNumber, selectedRegion) => {
-    const cfg = regionConfig[selectedRegion] || regionConfig.India;
-    try {
-      return new Intl.NumberFormat(cfg.locale, {
-        style: "currency",
-        currency: cfg.currency,
-        maximumFractionDigits: 0
-      }).format(regionalNumber);
-    } catch {
-      return String(regionalNumber);
-    }
-  };
-
+  /* ── Submit ── */
   const handleSubmit = async () => {
-    setPrice(null);
     setError("");
-
-    if (!validateForm()) {
-      setError("Please fix the highlighted fields and try again.");
-      return;
-    }
-
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      const response = await fetch("http://127.0.0.1:5000/predict", {
+      const payload = {
+        Brand: brand,
+        Ratings: 4.0,           // sensible default — not exposed in UI
+        RAM: sliders.RAM,
+        ROM: sliders.ROM,
+        Mobile_Size: sliders.Mobile_Size,
+        Primary_Cam: sliders.Primary_Cam,
+        Selfi_Cam: 12,          // sensible default — not exposed in UI
+        Battery_Power: sliders.Battery_Power,
+      };
+      const res = await fetch("http://127.0.0.1:5000/predict", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(buildPayload())
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || "Prediction failed. Please try again.");
-        return;
-      }
-
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || "Prediction failed."); return; }
       setPrice(data.prediction);
     } catch {
-      setError("Unable to connect to backend. Please ensure the server is running.");
+      setError("Cannot connect to backend. Please ensure the server is running.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const getLabel = (key) => {
-    const labelMap = {
-      Brand: "📱 Brand",
-      Ratings: "⭐ Rating (out of 5)",
-      RAM: "🧠 RAM (GB)",
-      ROM: "💾 Storage (GB)",
-      Mobile_Size: "📐 Screen Size (inches)",
-      Primary_Cam: "📷 Rear Camera (MP)",
-      Selfi_Cam: "🤳 Front Camera (MP)",
-      Battery_Power: "🔋 Battery (mAh)"
-    };
-    return labelMap[key] || key;
-  };
-
-  const formattedPrice = price === null ? null : formatINR(price);
-  const formattedRegionalPrice = price === null ? null : formatByRegion(price, region);
-
-  const targetRegionalNumber = price === null ? null : getRegionalNumber(price, region);
-  const numberToDisplay = animatedRegionalNumber ?? targetRegionalNumber;
-
+  /* ── Animated counter effect ── */
   useEffect(() => {
-    if (price === null || price === undefined) return;
-    const node = resultSectionRef.current;
-    if (!node) return;
+    if (price === null) return;
+    const target = getRegionalNumber(price, region);
 
-    let cancelled = false;
-    let innerRaf = 0;
-
-    const scrollToResult = () => {
-      if (cancelled) return;
-      const reduced =
-        typeof window !== "undefined" &&
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      node.scrollIntoView({
-        behavior: reduced ? "auto" : "smooth",
-        block: "center",
-        inline: "nearest"
-      });
-    };
-
-    const outerRaf = requestAnimationFrame(() => {
-      innerRaf = requestAnimationFrame(scrollToResult);
-    });
-
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(outerRaf);
-      if (innerRaf) cancelAnimationFrame(innerRaf);
-    };
-  }, [price]);
-
-  useEffect(() => {
-    // Avoid animating until we have a prediction.
-    if (price === null || price === undefined) return;
-    if (targetRegionalNumber === null || Number.isNaN(targetRegionalNumber)) return;
-
-    const start = animatedNumberRef.current ?? prevDisplayedRef.current;
-    const target = targetRegionalNumber;
-
-    // Initial render: set immediately (no animation from 0).
-    if (start === null || start === undefined) {
-      prevDisplayedRef.current = target;
-      animatedNumberRef.current = target;
-      lastPublishedRoundRef.current = target;
-      setAnimatedRegionalNumber(target);
-      setFlashDirection(null);
+    if (prevRef.current === null || prevRef.current === undefined) {
+      prevRef.current = target;
+      animRef.current = target;
+      lastPubRef.current = target;
+      setDisplayNum(target);
+      setFlashDir(null);
       return;
     }
 
-    // If value hasn't changed, don't restart animation.
-    if (start === target) {
-      setFlashDirection(null);
-      return;
-    }
+    const start = animRef.current ?? prevRef.current;
+    if (start === target) { setFlashDir(null); return; }
 
-    const direction = target > start ? "up" : "down";
-    // setFlashDirection(direction);
-
+    const dir = target > start ? "up" : "down";
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
-    const durationMs = 1800;
-    const startTime = performance.now();
-
-    const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+    const DURATION = 1600;
+    const t0 = performance.now();
+    const ease = (t) => 1 - Math.pow(1 - t, 3);
 
     const tick = (now) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(1, elapsed / durationMs);
-      const eased = easeOutCubic(progress);
-
-      const current = start + (target - start) * eased;
-      const rounded =
-        progress < 1 ? Math.round(current) : target;
-
-      animatedNumberRef.current = rounded;
-      if (rounded !== lastPublishedRoundRef.current || progress >= 1) {
-        lastPublishedRoundRef.current = rounded;
-        setAnimatedRegionalNumber(rounded);
+      const prog = Math.min(1, (now - t0) / DURATION);
+      const cur = start + (target - start) * ease(prog);
+      const rounded = prog < 1 ? Math.round(cur) : target;
+      animRef.current = rounded;
+      if (rounded !== lastPubRef.current || prog >= 1) {
+        lastPubRef.current = rounded;
+        setDisplayNum(rounded);
       }
-
-      if (progress < 1) {
+      if (prog < 1) {
         rafRef.current = requestAnimationFrame(tick);
       } else {
-        prevDisplayedRef.current = target;
-        animatedNumberRef.current = target;
-        lastPublishedRoundRef.current = target;
-        if (flashTimeoutRef.current) window.clearTimeout(flashTimeoutRef.current);
-
-        setFlashDirection(direction);
-        flashTimeoutRef.current = window.setTimeout(() => {
-          setFlashDirection(null);
-          flashTimeoutRef.current = null;
-        }, 800);
+        prevRef.current = target;
+        animRef.current = target;
+        if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+        setFlashDir(dir);
+        flashTimerRef.current = setTimeout(() => setFlashDir(null), 800);
       }
     };
-
     rafRef.current = requestAnimationFrame(tick);
-
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      if (flashTimeoutRef.current) window.clearTimeout(flashTimeoutRef.current);
-      flashTimeoutRef.current = null;
-      setFlashDirection(null);
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
     };
-  }, [price, region, targetRegionalNumber]);
+  }, [price, region]);
+
+  /* ── Reset display on region change if no price yet ── */
+  useEffect(() => {
+    if (price !== null) {
+      const target = getRegionalNumber(price, region);
+      prevRef.current = null;
+      animRef.current = null;
+      lastPubRef.current = null;
+      setDisplayNum(null);
+      // re-trigger by touching price state indirectly via a flag
+      // actually we just force by directly starting from 0
+      const DURATION = 1200;
+      const t0 = performance.now();
+      const ease = (t) => 1 - Math.pow(1 - t, 3);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      const start = 0;
+      const tick = (now) => {
+        const prog = Math.min(1, (now - t0) / DURATION);
+        const cur = start + (target - start) * ease(prog);
+        const rounded = prog < 1 ? Math.round(cur) : target;
+        setDisplayNum(rounded);
+        if (prog < 1) rafRef.current = requestAnimationFrame(tick);
+      };
+      rafRef.current = requestAnimationFrame(tick);
+    }
+  }, [region]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const amountClass = [
+    "price-result-amount",
+    flashDir === "up"   ? "price-result-amount--flash" : "",
+    flashDir === "down" ? "price-result-amount--flash" : "",
+  ].join(" ").trim();
 
   return (
-    <div className="predictor-wrapper">
-      {/* Main Container */}
-      <div className="predictor-card">
-        {/* Title */}
-        <div className="predictor-header">
-          <h1 className="predictor-title">📱 Smartphone Price Predictor</h1>
-          <p className="predictor-subtitle">
-            Select your phone specifications and get an instant price prediction
-          </p>
-        </div>
+    <div className="predictor-page">
+      {/* ── Header ── */}
+      <header className="predictor-header">
+        <div className="header-icon"><IconPhone /></div>
+        <h1 className="predictor-title">Smartphone Price Predictor</h1>
+        <p className="predictor-subtitle">
+          Get instant AI-powered price predictions based on your device specifications
+        </p>
+      </header>
 
-        {/* Form Grid - 4 columns */}
-        <div className="predictor-grid">
-          <datalist id="brand-options">
-            {brands.map((brand) => (
-              <option key={brand} value={brand} />
-            ))}
-          </datalist>
-          {Object.keys(form).map((key) => (
-            <div key={key} className="predictor-field">
-              <label className="predictor-label">{getLabel(key)}</label>
-              {key === "Brand" ? (
-                <input
-                  type="text"
-                  name={key}
-                  value={form[key]}
-                  onChange={handleChange}
-                  list="brand-options"
-                  placeholder="Type or select a brand (e.g., Apple, Samsung)"
-                  className="predictor-input"
-                />
-              ) : key === "Ratings" ? (
-                <input
-                  type="number"
-                  name={key}
-                  value={form[key]}
-                  onChange={handleChange}
-                  min="1"
-                  max="5"
-                  step="0.1"
-                  placeholder="Enter rating (1-5)"
-                  className="predictor-input"
-                />
-              ) : (
-                <select
-                  name={key}
-                  value={form[key]}
-                  onChange={handleChange}
-                  className="predictor-input"
-                >
-                  <option value="">Select {getLabel(key)}</option>
-                  {dropdownOptions[key].length > 0 ? (
-                    dropdownOptions[key].map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))
-                  ) : (
-                    <option>Not available yet</option>
-                  )}
-                </select>
-              )}
-              {fieldErrors[key] && (
-                <p className="predictor-field-error">{fieldErrors[key]}</p>
-              )}
-            </div>
-          ))}
-        </div>
+      {/* ── Two-panel layout ── */}
+      <div className="predictor-layout">
 
-        {/* Button */}
-        <div className="predictor-button-wrap">
-          <button onClick={handleSubmit} className="predictor-button" disabled={isLoading}>
-            {isLoading ? "Predicting..." : "🔮 Predict Price"}
+        {/* ── LEFT: Device Specifications ── */}
+        <div className="panel-card">
+          <div className="panel-heading">
+            <span style={{ display:"flex", alignItems:"center", gap:"10px" }}>
+              <svg className="panel-heading-icon" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="17" r="1"/>
+              </svg>
+              <h2>Device Specifications</h2>
+            </span>
+          </div>
+
+          {/* Brand */}
+          <div className="field-group">
+            <label className="field-label" htmlFor="brand-select">Brand</label>
+            <select
+              id="brand-select"
+              className="brand-select"
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
+            >
+              {BRANDS.map((b) => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Sliders */}
+          {SLIDERS.map(({ key, label, unit, min, max, step, cls, Icon }) => {
+            const val = sliders[key];
+            const percentage = pct(val, min, max);
+            const displayVal = key === "Mobile_Size"
+              ? `${Number(val).toFixed(1)}"`
+              : `${val} ${unit}`;
+            return (
+              <div className="slider-group" key={key}>
+                <div className="slider-label-row">
+                  <span className="slider-label-icon">
+                    <Icon />
+                    {label}
+                  </span>
+                  <span className="slider-value">{displayVal}</span>
+                </div>
+                <input
+                  id={`slider-${key}`}
+                  type="range"
+                  className={`slider ${cls}`}
+                  style={{ "--pct": percentage }}
+                  min={min}
+                  max={max}
+                  step={step}
+                  value={val}
+                  onChange={(e) => handleSlider(key, e.target.value)}
+                  aria-label={label}
+                  aria-valuemin={min}
+                  aria-valuemax={max}
+                  aria-valuenow={val}
+                />
+              </div>
+            );
+          })}
+
+          {/* Predict button */}
+          <button
+            id="predict-btn"
+            className={`predict-btn${isLoading ? " loading" : ""}`}
+            onClick={handleSubmit}
+            disabled={isLoading}
+            aria-label="Predict smartphone price"
+          >
+            {isLoading ? (
+              <><IconLoader />&nbsp;Predicting…</>
+            ) : (
+              <><IconSparkles />Predict Price</>
+            )}
           </button>
+
+          {error && (
+            <div className="error-banner" role="alert" aria-live="polite">{error}</div>
+          )}
         </div>
 
-        {error && (
-          <div className="predictor-error" role="alert" aria-live="polite">
-            {error}
-          </div>
-        )}
+        {/* ── RIGHT: Predicted Price ── */}
+        <div className="right-panel">
+          <div className="panel-card price-panel">
+            <div className="panel-heading price-panel-heading">
+              <h2>Predicted Price</h2>
+            </div>
 
-        {/* Result Display */}
-        {price !== null && (
-          <div className="predictor-result" ref={resultSectionRef} tabIndex={-1}>
-            <div className="predictor-result-top">
-              <h1 className="predictor-result-title">Estimated Price</h1>
-              <p className="predictor-result-subtitle">Based on the specifications you selected</p>
-            </div>
-            <div
-  style={{
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "16px",
-    gap: "12px",
-    flexWrap: "wrap"
-  }}
->
-              <select
-                className="predictor-input"
-                value={region}
-                onChange={(e) => setRegion(e.target.value)}
-                aria-label="Select region for pricing"
-                style={{ maxWidth: "320px" }}
-              >
-                <option value="India">India (INR ₹)</option>
-                <option value="USA">USA (USD $)</option>
-                <option value="Europe">Europe (EUR €)</option>
-                <option value="Japan">Japan (YEN ¥)</option>
-              </select>
-            </div>
-            <div className="predictor-result-value" aria-live="polite">
-              <span
-                className={[
-                  "predictor-result-amount",
-                  flashDirection === "up"
-                    ? "predictor-result-amount--up"
-                    : flashDirection === "down"
-                      ? "predictor-result-amount--down"
-                      : ""
-                ].join(" ")}
-              >
-                {numberToDisplay === null ? "" : formatNumberByRegion(numberToDisplay, region)}
-              </span>
+            <div className="price-panel-body">
+              {price === null ? (
+                /* Placeholder */
+                <>
+                  <div className="price-placeholder-icon">
+                    <IconSparkles />
+                  </div>
+                  <p className="price-placeholder-text">
+                    Configure your device specs and click "Predict Price" to get an
+                    instant AI-powered estimate
+                  </p>
+                </>
+              ) : (
+                /* Result — layout matches reference: glow card, caption, spec rows */
+                <div className="price-result">
+                  <div
+                    className={[
+                      "price-result-glow",
+                      flashDir ? "price-result-glow--flash" : "",
+                    ].join(" ").trim()}
+                  >
+                    <span className={amountClass} aria-live="polite" aria-atomic="true">
+                      {displayNum !== null
+                        ? formatRegional(
+                            displayNum / (REGION_CONFIG[region]?.rate || 1),
+                            region
+                          )
+                        : "—"}
+                    </span>
+                  </div>
+                  <p className="price-result-caption">
+                    Estimated market price based on specifications
+                  </p>
+
+                  <div className="price-spec-list">
+                    <div className="price-spec-row">
+                      <span className="price-spec-label">Brand</span>
+                      <span className="price-spec-value">{brand}</span>
+                    </div>
+                    <div className="price-spec-row">
+                      <span className="price-spec-label">RAM</span>
+                      <span className="price-spec-value">{sliders.RAM} GB</span>
+                    </div>
+                    <div className="price-spec-row">
+                      <span className="price-spec-label">Storage</span>
+                      <span className="price-spec-value">{sliders.ROM} GB</span>
+                    </div>
+                    <div className="price-spec-row">
+                      <span className="price-spec-label">Battery</span>
+                      <span className="price-spec-value">{sliders.Battery_Power} mAh</span>
+                    </div>
+                  </div>
+
+                  <div className="region-select-wrap">
+                    <select
+                      id="region-select"
+                      className="region-select"
+                      value={region}
+                      onChange={(e) => setRegion(e.target.value)}
+                      aria-label="Select region for currency"
+                    >
+                      <option value="India">🇮🇳 India (INR ₹)</option>
+                      <option value="USA">🇺🇸 USA (USD $)</option>
+                      <option value="Europe">🇪🇺 Europe (EUR €)</option>
+                      <option value="Japan">🇯🇵 Japan (JPY ¥)</option>
+                    </select>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
 }
-
-export default Predictor;
