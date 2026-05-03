@@ -1,7 +1,7 @@
 from pathlib import Path
-import sys
 
 from flask import Flask, request, jsonify
+import numpy as np
 import pandas as pd
 import joblib
 from flask_cors import CORS
@@ -14,7 +14,42 @@ CORS(app)
 
 # ── Model ──────────────────────────────────────────────────────────────────
 
-pipeline = joblib.load( "mobile_price_pipeline.pkl")
+_cb_model = None
+_CAT_FEATURES = ("Brand",)
+_FEATURE_COLS = ()
+
+_pkl = Path(__file__).resolve().parent / "mobile_price_pipeline.pkl"
+if not _pkl.is_file():
+    _pkl = Path(__file__).resolve().parent.parent / "mobile_price_pipeline.pkl"
+try:
+    _bundle = joblib.load(_pkl) if _pkl.is_file() else None
+    if _bundle is None:
+        raise FileNotFoundError(str(_pkl))
+    if isinstance(_bundle, dict):
+        _cb_model = _bundle["model"]
+        _CAT_FEATURES = tuple(_bundle.get("cat_features", ["Brand"]))
+        _FEATURE_COLS = tuple(_bundle.get("feature_cols", []))
+    else:
+        _cb_model = _bundle
+except Exception as exc:
+    print("Warning: could not load mobile_price_pipeline.pkl:", exc)
+
+
+def _engineer_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Must match Smartphone_Price_Predictor.ipynb definitions."""
+    out = df.copy()
+    out["performance_score"] = out["RAM"] * np.sqrt(out["Primary_Cam"]) + out["Battery_Power"] / 500.0
+    out["value_index"] = (out["RAM"] * out["ROM"]) / (out["Mobile_Size"] ** 2 + 0.1)
+    for c in _CAT_FEATURES:
+        out[c] = out[c].astype(str)
+    return out
+
+
+def _predict(df_base: pd.DataFrame):
+    eng = _engineer_features(df_base)
+    if _FEATURE_COLS:
+        eng = eng[list(_FEATURE_COLS)]
+    return _cb_model.predict(eng)
 
 REQUIRED_FIELDS = ["Brand", "Ratings", "RAM", "ROM", "Mobile_Size",
                    "Primary_Cam", "Selfi_Cam", "Battery_Power"]
@@ -74,7 +109,7 @@ def get_brands():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    if pipeline is None:
+    if _cb_model is None:
         return jsonify({"error": "Model not loaded. Ensure mobile_price_pipeline.pkl exists."}), 500
 
     data = request.get_json(silent=True)
@@ -88,7 +123,7 @@ def predict():
     df = pd.DataFrame([cleaned], columns=REQUIRED_FIELDS)
 
     try:
-        prediction = pipeline.predict(df)[0]
+        prediction = _predict(df)[0]
     except Exception as exc:
         return jsonify({"error": f"Prediction failed: {exc}"}), 400
 
